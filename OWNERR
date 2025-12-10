@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Painel Owner</title>
+<style>
+body {
+    background:#000;
+    font-family:Arial;
+    margin:0;
+    padding:0;
+    user-select:none;
+}
+
+/* TELA DE KEY */
+#keyBox {
+    width:260px;
+    padding:20px;
+    background:#111;
+    border:2px solid #b00000;
+    border-radius:10px;
+    position:absolute;
+    top:50%;
+    left:50%;
+    transform:translate(-50%, -50%);
+    color:white;
+    text-align:center;
+}
+#keyInput {
+    width:90%;
+    padding:8px;
+    margin-top:10px;
+    border-radius:5px;
+    border:1px solid #b00000;
+    background:#000;
+    color:white;
+}
+#keyBtn {
+    padding:8px 15px;
+    margin-top:10px;
+    background:#b00000;
+    border:none;
+    color:white;
+    border-radius:5px;
+    cursor:pointer;
+}
+#keyError {
+    color:#ff2b2b;
+    margin-top:5px;
+    display:none;
+}
+
+/* PAINEL */
+#painelOwner {
+    width: 360px;
+    background:#111;
+    border:2px solid #b00000;
+    border-radius:10px;
+    padding:12px;
+    position:absolute;
+    top:50%;
+    left:50%;
+    transform:translate(-50%, -50%);
+    color:white;
+    cursor:move;
+    display:none;
+}
+#titulo {
+    text-align:center;
+    font-size:20px;
+    color:#ff2b2b;
+    font-weight:bold;
+    position:relative;
+}
+
+/* Boas-vindas */
+#welcomeText {
+    color:#00ff62;
+    font-weight:bold;
+    text-align:center;
+    margin-bottom:8px;
+    opacity:0;
+    transition:opacity 0.5s;
+}
+
+/* Abas */
+.tabs {
+    display:flex;
+    justify-content:flex-start;
+    margin:10px 0;
+}
+.tab {
+    padding:6px 10px;
+    background:#111;
+    border:1px solid #b00000;
+    color:white;
+    border-radius:5px;
+    cursor:pointer;
+    margin-right:5px;
+}
+.tab.active {
+    background:#b00000;
+}
+
+/* Conteúdo da aba */
+.tab-content {
+    display:none;
+}
+.tab-content.active {
+    display:block;
+}
+
+/* Botões */
+.btn {
+    width:100%;
+    padding:7px;
+    margin:6px 0;
+    background:#111;
+    border:1px solid #b00000;
+    color:white;
+    border-radius:5px;
+    cursor:pointer;
+    transition:0.15s;
+}
+.btn.on {
+    background:#b00000 !important;
+    border:1px solid #ff2b2b !important;
+}
+
+/* Status Textos */
+.statusText {
+    color:#00ff62;
+    font-weight:bold;
+    margin-left:5px;
+    margin-top:2px;
+    opacity:0;
+    transition: opacity 0.5s;
+}
+</style>
+</head>
+<body>
+
+<!-- TELA DE KEY -->
+<div id="keyBox">
+    <h2>Enter Key</h2>
+    <input id="keyInput" placeholder="Enter key...">
+    <button id="keyBtn">Verify</button>
+    <div id="keyError">Key Incorrect</div>
+</div>
+
+<!-- PAINEL OWNER -->
+<div id="painelOwner">
+    <div id="welcomeText">Bem-vindo Owner!</div>
+    <div id="titulo">Painel Owner</div>
+
+    <!-- ABAS -->
+    <div class="tabs">
+        <button class="tab active" onclick="openTab('owner')">Owner</button>
+    </div>
+
+    <!-- CONTEÚDO DA ABA OWNER -->
+    <div id="owner" class="tab-content active">
+        <button class="btn" id="bypassBtn">Bypass</button>
+        <p id="bypassStatus" class="statusText"></p>
+
+        <button class="btn" id="closeBtn">Close All</button>
+        <p id="closeStatus" class="statusText"></p>
+
+        <button class="btn" id="lockBtn">Lock Panel</button>
+        <p id="lockStatus" class="statusText"></p>
+
+        <button class="btn" id="unlockBtn">Unlock Panel</button>
+        <p id="unlockStatus" class="statusText"></p>
+
+        <button class="btn" id="checkBtn">Check System</button>
+        <p id="checkStatus" class="statusText"></p>
+    </div>
+</div>
+
+<script>
+// KEY SYSTEM
+document.getElementById("keyBtn").addEventListener("click", function(){
+    let key = document.getElementById("keyInput").value;
+    if(key === "Dnz"){
+        document.getElementById("keyBox").style.display = "none";
+        document.getElementById("painelOwner").style.display = "block";
+        document.getElementById("keyError").style.display = "none";
+
+        // mostrar "Bem-vindo Owner!" 3s
+        let welcome = document.getElementById("welcomeText");
+        welcome.style.opacity = "1";
+        setTimeout(()=>{ welcome.style.opacity = "0"; },3000);
+
+    }else{
+        document.getElementById("keyError").style.display = "block";
+    }
+});
+
+// ABAS
+function openTab(tabId){
+    document.querySelectorAll('.tab-content').forEach(x=>x.classList.remove('active'));
+    document.getElementById(tabId).classList.add('active');
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelector(`[onclick="openTab('${tabId}')"]`).classList.add('active');
+}
+
+// FUNÇÃO DE CARREGAMENTO
+function loadButton(statusId, finalText){
+    let status = document.getElementById(statusId);
+    status.style.display="inline";
+    status.style.opacity="1";
+    status.innerText = "1%";
+    let i = 1;
+    let interval = setInterval(()=>{
+        i++;
+        status.innerText = i + "%";
+        if(i>=100){
+            clearInterval(interval);
+            status.innerText = finalText;
+            setTimeout(()=>{
+                status.style.opacity="0";
+            },3000);
+        }
+    },10);
+}
+
+// BYPASS
+document.getElementById("bypassBtn").addEventListener("click", ()=>{
+    loadButton("bypassStatus","All keys Painels Redefined");
+});
+
+// CLOSE ALL
+document.getElementById("closeBtn").addEventListener("click", ()=>{
+    loadButton("closeStatus","All closed");
+});
+
+// LOCK PANEL
+document.getElementById("lockBtn").addEventListener("click", ()=>{
+    loadButton("lockStatus","All Panels locked");
+});
+
+// UNLOCK PANEL
+document.getElementById("unlockBtn").addEventListener("click", ()=>{
+    let status = document.getElementById("unlockStatus");
+    status.style.display="inline";
+    status.style.opacity="1";
+    status.innerText="All Panels unlocked";
+    setTimeout(()=>{ status.style.opacity="0"; },3000);
+});
+
+// CHECK SYSTEM
+document.getElementById("checkBtn").addEventListener("click", ()=>{
+    loadButton("checkStatus","System OK");
+});
+
+// Painel arrastável
+let painel = document.getElementById("painelOwner");
+let movendo=false, offsetX, offsetY;
+painel.addEventListener("mousedown", e=>{
+    movendo=true;
+    offsetX=e.clientX - painel.offsetLeft;
+    offsetY=e.clientY - painel.offsetTop;
+});
+document.addEventListener("mousemove", e=>{
+    if(movendo){
+        painel.style.left = (e.clientX - offsetX) + "px";
+        painel.style.top = (e.clientY - offsetY) + "px";
+    }
+});
+document.addEventListener("mouseup", ()=>movendo=false);
+</script>
+
+</body>
+</html>
