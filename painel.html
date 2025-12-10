@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel Dnz</title>
+<style>
+body { margin:0; padding:0; background:#111; font-family:Arial,sans-serif; }
+/* BOTÃO INICIAL */
+#startBtn { 
+  width:200px; height:60px; 
+  background:#1c1c1c; border:2px solid #ff0000; 
+  color:#ff0000; font-size:20px; border-radius:12px; 
+  cursor:pointer; position:absolute; top:50%; left:50%; 
+  transform:translate(-50%, -50%);
+}
+/* PAINEL */
+.painel { background:#1c1c1c; border:2px solid #ff0000; border-radius:12px; padding:0 20px 20px 20px; width:340px; display:none; position:fixed; top:100px; left:50%; margin-left:-170px; box-shadow:0 0 8px #ff0000; z-index:1000; }
+.drag-bar { width:100%; height:30px; cursor:grab; background:#111; border-bottom:2px solid #ff0000; display:flex; justify-content:space-between; align-items:center; color:#ff0000; padding:0 10px; box-sizing:border-box; }
+.close-btn { font-size:20px; cursor:pointer; color:#ff0000; }
+.botao { background:#111; border:2px solid #ff0000; color:#ff0000; padding:12px; width:200px; margin:10px auto; border-radius:8px; cursor:pointer; text-align:center; }
+.botao.active { background:#ff0000; color:#111; box-shadow:0 0 8px #ff3333; }
+.fov-container { color:#ff0000; text-align:center; margin-top:10px; }
+.barra { width:200px; background:#1c1c1c; border:2px solid #ff0000; color:#ff0000; border-radius:10px; padding:10px; position:fixed; top:20px; left:20px; display:none; justify-content:space-between; align-items:center; box-shadow:0 0 8px #ff0000; cursor:grab; }
+.barra span { font-weight:bold; }
+</style>
+</head>
+<body>
+
+<!-- BOTÃO INICIAL -->
+<button id="startBtn">Painel</button>
+
+<!-- PAINEL COMPLETO -->
+<div class="painel" id="painel">
+  <div class="drag-bar" id="dragBar">
+    <span>Painel Dnz</span>
+    <div class="close-btn" onclick="minimizar()">−</div>
+  </div>
+  <div class="botao" onclick="toggle(this)">Aimbot</div>
+  <div class="botao" onclick="toggle(this)">Wallhack</div>
+  <div class="botao" onclick="toggle(this)">Speed Hack</div>
+  <div class="botao" onclick="toggle(this)">Stick Head</div>
+  <div class="fov-container">
+    FOV: <span id="fovValue">90</span><br>
+    <input type="range" min="30" max="180" value="90" id="fovSlider" oninput="updateFOV(this.value)">
+  </div>
+  <div class="botao" onclick="bypass()">Bypass</div>
+</div>
+
+<!-- BARRA MINIMIZADA -->
+<div class="barra" id="barra">
+  <span>Painel Dnz</span>
+  <div onclick="maximizar()" style="cursor:pointer; font-size:20px;">−</div>
+</div>
+
+<script>
+const startBtn = document.getElementById("startBtn");
+const painel = document.getElementById("painel");
+const barra = document.getElementById("barra");
+let painelVisible=false;
+let savedTop=100,savedLeft=50;
+
+/* BOTÃO INICIAL ABRIR YOUTUBE */
+startBtn.onclick = () => {
+  window.open("https://www.youtube.com","_blank");
+  localStorage.setItem("ytClicked","true");
+};
+
+/* QUANDO VOLTAR PARA O APP */
+window.addEventListener("focus", () => {
+  if(localStorage.getItem("ytClicked")==="true"){
+    startBtn.style.display="none"; // esconde botão inicial
+    painel.style.display="block";   // mostra Painel Dnz
+    painelVisible=true;
+    localStorage.removeItem("ytClicked");
+  }
+});
+
+/* BOTÕES DO PAINEL */
+function toggle(btn){ btn.classList.toggle("active"); }
+function updateFOV(v){ document.getElementById("fovValue").innerText=v; }
+
+/* MINIMIZAR/ MAXIMIZAR */
+function maximizar(){ painel.style.display="block"; barra.style.display="none"; painelVisible=true; }
+function minimizar(){ painel.style.display="none"; barra.style.display="flex"; painelVisible=false; }
+
+/* BYPASS */
+function bypass(){ painel.style.display="none"; barra.style.display="none"; painelVisible=false; }
+
+/* ARRASTAR SOMENTE QUANDO MAXIMIZADO */
+function dragElement(el){
+  let startX=0,startY=0,initialTop=0,initialLeft=0;
+  el.addEventListener("mousedown",dragStart);
+  el.addEventListener("touchstart",dragStart,{passive:false});
+  function dragStart(e){
+    if(!painelVisible) return;
+    e.preventDefault();
+    if(e.type==="touchstart"){ startX=e.touches[0].clientX; startY=e.touches[0].clientY; }
+    else{ startX=e.clientX; startY=e.clientY; }
+    let parent=el.parentElement;
+    initialTop=parseInt(parent.style.top)||parent.offsetTop;
+    initialLeft=parseInt(parent.style.left)||parent.offsetLeft;
+    if(e.type==="touchstart"){
+      document.addEventListener("touchmove",dragMove,{passive:false});
+      document.addEventListener("touchend",dragEnd);
+    }else{
+      document.addEventListener("mousemove",dragMove);
+      document.addEventListener("mouseup",dragEnd);
+    }
+  }
+  function dragMove(e){
+    e.preventDefault();
+    let x=0,y=0;
+    if(e.type.includes("touch")){ x=e.touches[0].clientX-startX; y=e.touches[0].clientY-startY; }
+    else{ x=e.clientX-startX; y=e.clientY-startY; }
+    let parent=el.parentElement;
+    parent.style.top=(initialTop+y)+"px";
+    parent.style.left=(initialLeft+x)+"px";
+  }
+  function dragEnd(e){
+    document.removeEventListener("mousemove",dragMove);
+    document.removeEventListener("mouseup",dragEnd);
+    document.removeEventListener("touchmove",dragMove);
+    document.removeEventListener("touchend",dragEnd);
+  }
+}
+dragElement(document.getElementById("dragBar"));
+</script>
+
+</body>
+</html>
