@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Painel DNZ</title>
+<style>
+body {
+    background:#000;
+    font-family:Arial;
+    margin:0;
+    padding:0;
+    user-select:none;
+}
+
+/* TELA DE KEY */
+#keyBox {
+    width:260px;
+    padding:20px;
+    background:#111;
+    border:2px solid #fff;
+    border-radius:10px;
+    position:absolute;
+    top:50%;
+    left:50%;
+    transform:translate(-50%, -50%);
+    color:white;
+    text-align:center;
+    z-index:10;
+}
+#keyInput {
+    width:90%;
+    padding:8px;
+    margin-top:10px;
+    border-radius:5px;
+    border:1px solid #fff;
+    background:#000;
+    color:white;
+}
+#keyBtn {
+    padding:8px 15px;
+    margin-top:10px;
+    background:#fff;
+    border:none;
+    color:#000;
+    border-radius:5px;
+    cursor:pointer;
+}
+#keyBtn:hover {
+    background:#e0e0e0;
+}
+#keyErro {
+    color:#ff2b2b;
+    margin-top:5px;
+    display:none;
+}
+
+/* PAINEL */
+#painelDnz {
+    width: 460px;
+    background:#000;
+    border:2px solid #fff;
+    border-radius:10px;
+    position:absolute;
+    top:50%;
+    left:50%;
+    transform:translate(-50%, -50%);
+    color:white;
+    cursor:move;
+    display:none; /* começa oculto */
+    box-shadow:0 0 15px #000;
+}
+
+/* Título e Beta */
+#titulo {
+    text-align:center;
+    font-size:20px;
+    color:#fff;
+    font-weight:bold;
+    position:relative;
+}
+#beta {
+    position:absolute;
+    top:5px;
+    right:10px;
+    font-size:12px;
+    color:rgba(255,255,255,0.2);
+}
+
+/* Abas verticais */
+.abas {
+    display:flex;
+    flex-direction:column;
+    width:100px;
+    padding-top:40px;
+}
+.aba-btn {
+    margin:4px 0;
+    padding:8px;
+    background:#000;
+    border:1px solid #fff;
+    color:white;
+    border-radius:5px;
+    cursor:pointer;
+}
+.aba-btn.ativa {
+    background:#fff;
+    color:#000;
+}
+
+/* Conteúdo */
+.conteudo {
+    display:none;
+    flex:1;
+    padding:12px;
+    overflow-y:auto;
+}
+
+/* Botões ON/OFF */
+.btn {
+    width:100%;
+    padding:7px;
+    margin:6px 0;
+    background:#000;
+    border:1px solid #fff;
+    color:white;
+    border-radius:5px;
+    cursor:pointer;
+    transition:0.15s;
+}
+.btn.on {
+    background:#fff !important;
+    border:1px solid #fff !important;
+    color:#000 !important;
+}
+
+/* Slider */
+.slider {
+    width:100%;
+    margin-top:5px;
+}
+
+/* TEXTO VERDE DO BYPASS */
+#contadorBypass {
+    color:#00ff62;
+    font-weight:bold;
+    margin-left:5px;
+}
+
+/* NOVO MENU DE OPÇÕES */
+.btn.mini {
+    margin:4px 0;
+    padding:7px;
+    background:#000;
+    border:1px solid #fff;
+    color:white;
+    border-radius:5px;
+    width:100%;
+    text-align:left;
+}
+.btn.mini:hover {
+    background:#fff;
+    color:#000;
+}
+</style>
+</head>
+
+<body>
+
+<!-- TELA DE KEY -->
+<div id="keyBox">
+    <h2>Insira a Key</h2>
+    <input id="keyInput" placeholder="Digite a Key...">
+    <button id="keyBtn" onclick="checkKey()">Entrar</button>
+    <div id="keyErro">Key Incorreta</div>
+</div>
+
+<!-- PAINEL PRINCIPAL -->
+<div id="painelDnz">
+    <!-- Abas verticais -->
+    <div class="abas">
+        <button class="aba-btn ativa" onclick="trocarAba('aim', this)">AIM</button>
+        <button class="aba-btn" onclick="trocarAba('esp', this)">ESP</button>
+        <button class="aba-btn" onclick="trocarAba('misc', this)">MISC</button>
+        <button class="aba-btn" onclick="trocarAba('info', this)">INFO</button>
+    </div>
+
+    <!-- Conteúdo -->
+    <div style="flex:1; display:flex; flex-direction:column;">
+        <div id="titulo">PAINEL DNZ <span id="beta">Beta 3.0</span></div>
+
+        <!-- ABA AIM -->
+        <div id="aim" class="conteudo" style="display:block;">
+            <button class="btn" onclick="toggle(this)">Aimbot</button>
+            <button class="btn" onclick="toggle(this)">Exibir FOV</button>
+
+            <label>FOV: <span id="valorFov">45</span></label>
+            <input type="range" class="slider" min="1" max="180" value="45" oninput="valorFov.innerText=this.value">
+
+            <button class="btn" onclick="toggle(this)">Ignorar deitado</button>
+            <button class="btn" onclick="toggle(this)">Ignorar paredes</button>
+
+            <!-- NOVOS BOTÕES ON/OFF DO AIM -->
+            <button class="btn" onclick="toggle(this)">Aim Assist</button>
+            <button class="btn" onclick="toggle(this)">Aim Sniper</button>
+            <button class="btn" onclick="toggle(this)">Aim Disguised</button>
+            <button class="btn" onclick="toggle(this)">Ainlock</button>
+
+            <!-- MENU DE ESCOLHAS -->
+            <p style="margin-top:10px; color:white; font-weight:bold;">Opções de mira:</p>
+            <button id="btnOpcao" class="btn" onclick="abrirOpcoes()">
+                Selecionar: <span id="opcaoSelecionada">Nenhum</span>
+            </button>
+            <div id="listaOpcoes" style="
+                display:none; 
+                margin-top:8px;
+                background:#000;
+                border:1px solid #fff;
+                border-radius:6px;
+                padding:6px;
+            ">
+                <button class="btn mini" onclick="selecionarOpcao('Cabeça')">Grudar cabeça</button>
+                <button class="btn mini" onclick="selecionarOpcao('Peito')">Grudar peito</button>
+                <button class="btn mini" onclick="selecionarOpcao('Pé')">Grudar pé</button>
+                <button class="btn mini" onclick="selecionarOpcao('Deitado')">Grudar deitado</button>
+            </div>
+        </div>
+
+        <!-- ABA ESP -->
+        <div id="esp" class="conteudo">
+            <button class="btn" onclick="toggle(this)">Box</button>
+            <button class="btn" onclick="toggle(this)">Nome</button>
+            <button class="btn" onclick="toggle(this)">Vida</button>
+            <button class="btn" onclick="toggle(this)">Linha</button>
+            <button class="btn" onclick="toggle(this)">Distância</button>
+        </div>
+
+        <!-- ABA MISC -->
+        <div id="misc" class="conteudo">
+            <button class="btn" onclick="iniciarBypass(this)">
+                Bypass <span id="contadorBypass"></span>
+            </button>
+
+            <button class="btn" id="esconderBtn" onclick="this.classList.toggle('on')">
+                Esconder Painel
+            </button>
+        </div>
+
+        <!-- ABA INFO -->
+        <div id="info" class="conteudo">
+            <p>Criador: <b>Dnz</b></p>
+            <p>Ajudante: <b>GPT</b></p>
+        </div>
+    </div>
+</div>
+
+<script>
+function checkKey() {
+    let key = document.getElementById("keyInput").value;
+    if (key === "Dani") { 
+        document.getElementById("keyBox").style.display = "none"; 
+        document.getElementById("painelDnz").style.display = "flex"; 
+        document.getElementById("keyErro").style.display = "none"; 
+    } else {
+        document.getElementById("keyErro").style.display = "block"; 
+    }
+}
+
+/* Trocar abas */
+function trocarAba(aba, btn) {
+    document.querySelectorAll('.conteudo').forEach(x => x.style.display="none");
+    document.querySelectorAll('.aba-btn').forEach(x => x.classList.remove("ativa"));
+    document.getElementById(aba).style.display="block";
+    btn.classList.add("ativa");
+}
+
+/* ON/OFF */
+function toggle(btn) {
+    btn.classList.toggle("on");
+}
+
+/* BYPASS */
+function iniciarBypass(btn) {
+    let contador = document.getElementById("contadorBypass");
+    let n = 0;
+
+    btn.disabled = true;  
+
+    let timer = setInterval(() => {
+        n++;
+        contador.innerText = n + "%";
+
+        if (n >= 100) {
+            clearInterval(timer);
+            document.getElementById("painelDnz").style.display = "none";
+            document.getElementById("keyBox").style.display = "none";
+        }
+    }, 20);
+}
+
+/* Painel arrastável */
+let painel = document.getElementById("painelDnz");
+let movendo = false, offsetX, offsetY;
+
+painel.addEventListener("mousedown", e => {
+    movendo = true;
+    offsetX = e.clientX - painel.offsetLeft;
+    offsetY = e.clientY - painel.offsetTop;
+});
+
+document.addEventListener("mousemove", e => {
+    if (movendo) {
+        painel.style.left = (e.clientX - offsetX) + "px";
+        painel.style.top = (e.clientY - offsetY) + "px";
+    }
+});
+
+document.addEventListener("mouseup", () => movendo = false);
+
+/* NOVO MENU DE OPÇÕES */
+function abrirOpcoes() {
+    const lista = document.getElementById("listaOpcoes");
+    lista.style.display = lista.style.display === "block" ? "none" : "block";
+}
+
+function selecionarOpcao(opcao) {
+    document.getElementById("opcaoSelecionada").innerText = opcao;
+    document.getElementById("listaOpcoes").style.display = "none";
+}
+</script>
+
+</body>
+</html>
