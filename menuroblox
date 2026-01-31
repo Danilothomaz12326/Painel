@@ -1,0 +1,300 @@
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local Player = game:GetService("Players").LocalPlayer
+
+--------------------------------------------------
+-- GUI
+--------------------------------------------------
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "MenuDanzin"
+screenGui.Parent = Player:WaitForChild("PlayerGui")
+screenGui.ResetOnSpawn = false
+
+--------------------------------------------------
+-- DRAG
+--------------------------------------------------
+
+local function makeDraggable(guiObject)
+	local dragging, dragInput, dragStart, startPos
+
+	guiObject.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			dragging = true
+			dragStart = input.Position
+			startPos = guiObject.Position
+
+			input.Changed:Connect(function()
+				if input.UserInputState == Enum.UserInputState.End then
+					dragging = false
+				end
+			end)
+		end
+	end)
+
+	guiObject.InputChanged:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+			dragInput = input
+		end
+	end)
+
+	UserInputService.InputChanged:Connect(function(input)
+		if input == dragInput and dragging then
+			local delta = input.Position - dragStart
+			guiObject.Position = UDim2.new(
+				startPos.X.Scale,
+				startPos.X.Offset + delta.X,
+				startPos.Y.Scale,
+				startPos.Y.Offset + delta.Y
+			)
+		end
+	end)
+end
+
+--------------------------------------------------
+-- MAIN FRAME
+--------------------------------------------------
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0,0,0,0)
+mainFrame.Position = UDim2.new(0.5,0,0.5,0)
+mainFrame.BackgroundColor3 = Color3.fromRGB(0,0,0)
+mainFrame.Visible = false
+mainFrame.ClipsDescendants = true
+mainFrame.Parent = screenGui
+Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0,25)
+
+--------------------------------------------------
+-- SIDEBAR
+--------------------------------------------------
+
+local sideBar = Instance.new("Frame")
+sideBar.Size = UDim2.new(0,70,1,0)
+sideBar.BackgroundColor3 = Color3.fromRGB(15,15,15)
+sideBar.Parent = mainFrame
+Instance.new("UICorner", sideBar).CornerRadius = UDim.new(0,25)
+
+local function createSideBtn(text, posY)
+	local btn = Instance.new("TextButton")
+	btn.Size = UDim2.new(0,50,0,50)
+	btn.Position = UDim2.new(0.5,-25,posY,0)
+	btn.BackgroundColor3 = Color3.fromRGB(30,30,30)
+	btn.Text = text
+	btn.TextScaled = true
+	btn.TextColor3 = Color3.new(1,1,1)
+	btn.Parent = sideBar
+	Instance.new("UICorner", btn).CornerRadius = UDim.new(1,0)
+	return btn
+end
+
+local homeBtn = createSideBtn("🏠",0.1)
+local speedBtn = createSideBtn("⚙️",0.35)
+
+--------------------------------------------------
+-- CONTENT
+--------------------------------------------------
+
+local content = Instance.new("Frame")
+content.Position = UDim2.new(0,80,0,0)
+content.Size = UDim2.new(1,-80,1,0)
+content.BackgroundTransparency = 1
+content.Parent = mainFrame
+
+--------------------------------------------------
+-- HOME (CRÉDITOS)
+--------------------------------------------------
+
+local homePage = Instance.new("Frame")
+homePage.Size = UDim2.new(1,0,1,0)
+homePage.BackgroundTransparency = 1
+homePage.Parent = content
+
+local credits = Instance.new("TextLabel")
+credits.Size = UDim2.new(1,0,1,0)
+credits.BackgroundTransparency = 1
+credits.Text = "Créditos: Danzin"
+credits.TextScaled = true
+credits.Font = Enum.Font.GothamBold
+credits.TextColor3 = Color3.new(1,1,1)
+credits.Parent = homePage
+
+--------------------------------------------------
+-- SPEED PAGE
+--------------------------------------------------
+
+local speedPage = Instance.new("Frame")
+speedPage.Size = UDim2.new(1,0,1,0)
+speedPage.BackgroundTransparency = 1
+speedPage.Visible = false
+speedPage.Parent = content
+
+--------------------------------------------------
+-- SPEED
+--------------------------------------------------
+
+local speedInput = Instance.new("TextBox")
+speedInput.Size = UDim2.new(0.6,0,0.12,0)
+speedInput.Position = UDim2.new(0.2,0,0.05,0)
+speedInput.PlaceholderText = "Velocidade"
+speedInput.TextScaled = true
+speedInput.BackgroundColor3 = Color3.fromRGB(30,30,30)
+speedInput.TextColor3 = Color3.new(1,1,1)
+speedInput.Parent = speedPage
+Instance.new("UICorner", speedInput)
+
+local insertBtn = Instance.new("TextButton")
+insertBtn.Size = UDim2.new(0.5,0,0.12,0)
+insertBtn.Position = UDim2.new(0.25,0,0.18,0)
+insertBtn.Text = "Aplicar Speed"
+insertBtn.TextScaled = true
+insertBtn.BackgroundColor3 = Color3.new(1,1,1)
+insertBtn.TextColor3 = Color3.new(0,0,0)
+insertBtn.Parent = speedPage
+Instance.new("UICorner", insertBtn)
+
+insertBtn.MouseButton1Click:Connect(function()
+	local num = tonumber(speedInput.Text)
+	if num and Player.Character and Player.Character:FindFirstChild("Humanoid") then
+		Player.Character.Humanoid.WalkSpeed = num
+	end
+end)
+
+--------------------------------------------------
+-- TOGGLE FACTORY
+--------------------------------------------------
+
+local function createToggle(text, posY, callback)
+	local btn = Instance.new("TextButton")
+	btn.Size = UDim2.new(0.7,0,0.13,0)
+	btn.Position = UDim2.new(0.15,0,posY,0)
+	btn.Text = text
+	btn.TextScaled = true
+	btn.BackgroundColor3 = Color3.fromRGB(0,0,0)
+	btn.TextColor3 = Color3.new(1,1,1)
+	btn.Parent = speedPage
+	Instance.new("UICorner", btn)
+
+	local enabled = false
+
+	btn.MouseButton1Click:Connect(function()
+		enabled = not enabled
+		btn.BackgroundColor3 = enabled and Color3.new(1,1,1) or Color3.new(0,0,0)
+		btn.TextColor3 = enabled and Color3.new(0,0,0) or Color3.new(1,1,1)
+		if callback then callback(enabled) end
+	end)
+end
+
+--------------------------------------------------
+-- NOCLIP
+--------------------------------------------------
+
+local noclipConnection
+createToggle("Noclip",0.40,function(state)
+	if state then
+		noclipConnection = RunService.Stepped:Connect(function()
+			if Player.Character then
+				for _,v in pairs(Player.Character:GetDescendants()) do
+					if v:IsA("BasePart") then
+						v.CanCollide = false
+					end
+				end
+			end
+		end)
+	else
+		if noclipConnection then noclipConnection:Disconnect() end
+	end
+end)
+
+--------------------------------------------------
+-- TOOL TP
+--------------------------------------------------
+
+local mouse = Player:GetMouse()
+local tpEnabled = false
+
+createToggle("Tool TP",0.58,function(state)
+	tpEnabled = state
+end)
+
+mouse.Button1Down:Connect(function()
+	if tpEnabled and Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
+		Player.Character.HumanoidRootPart.CFrame =
+			CFrame.new(mouse.Hit.Position + Vector3.new(0,3,0))
+	end
+end)
+
+--------------------------------------------------
+-- INFINITE JUMP
+--------------------------------------------------
+
+local infJumpEnabled = false
+
+createToggle("Infinite Jump",0.76,function(state)
+	infJumpEnabled = state
+end)
+
+UserInputService.JumpRequest:Connect(function()
+	if infJumpEnabled and Player.Character and Player.Character:FindFirstChild("Humanoid") then
+		Player.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+	end
+end)
+
+--------------------------------------------------
+-- PAGE SWITCH
+--------------------------------------------------
+
+homeBtn.MouseButton1Click:Connect(function()
+	homePage.Visible = true
+	speedPage.Visible = false
+end)
+
+speedBtn.MouseButton1Click:Connect(function()
+	homePage.Visible = false
+	speedPage.Visible = true
+end)
+
+--------------------------------------------------
+-- BOTÃO ©
+--------------------------------------------------
+
+local trigger = Instance.new("TextButton")
+trigger.Size = UDim2.new(0,50,0,50)
+trigger.Position = UDim2.new(0,20,0,200)
+trigger.Text = "©"
+trigger.TextScaled = true
+trigger.BackgroundColor3 = Color3.fromRGB(30,30,30)
+trigger.TextColor3 = Color3.new(1,1,1)
+trigger.Parent = screenGui
+Instance.new("UICorner", trigger).CornerRadius = UDim.new(1,0)
+
+makeDraggable(trigger)
+makeDraggable(mainFrame)
+
+--------------------------------------------------
+-- OPEN/CLOSE
+--------------------------------------------------
+
+local open = false
+
+trigger.MouseButton1Click:Connect(function()
+	open = not open
+
+	if open then
+		mainFrame.Visible = true
+		mainFrame:TweenSizeAndPosition(
+			UDim2.new(0,450,0,280),
+			UDim2.new(0.5,-225,0.5,-140),
+			"Out","Back",0.35,true
+		)
+	else
+		mainFrame:TweenSizeAndPosition(
+			UDim2.new(0,0,0,0),
+			UDim2.new(0.5,0,0.5,0),
+			"Out","Back",0.35,true,
+			function()
+				mainFrame.Visible = false
+			end
+		)
+	end
+end)
