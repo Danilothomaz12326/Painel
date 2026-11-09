@@ -1,0 +1,1195 @@
+--========================================================
+-- PERSONAL ADMIN V7
+-- Delta Executor | Mobile / PC
+-- EFEITOS LOCAIS
+--========================================================
+
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+
+local Player = Players.LocalPlayer
+local Prefix = ":"
+
+local Character, Humanoid, Root
+local FlyOn = false
+local SpinOn = false
+local NoclipOn = false
+local Invisible = false
+local GhostOn = false
+
+local SpinSpeed = 30
+local FlySpeed = 1
+
+local FlyConnection
+local Attachment
+local Velocity
+local Orientation
+
+local SavedCollision = {}
+local OriginalTransparency = {}
+local GhostOriginal = {}
+
+local AnimateScript
+local AnimateWasDisabled
+local OldAutoRotate
+
+local PendingReturnCFrame = nil
+local ResetPending = false
+
+--========================================================
+-- PERSONAGEM
+--========================================================
+
+local function CharacterSetup(char)
+    Character = char
+    Humanoid = char:WaitForChild("Humanoid")
+    Root = char:WaitForChild("HumanoidRootPart")
+    AnimateScript = char:FindFirstChild("Animate")
+end
+
+CharacterSetup(Player.Character or Player.CharacterAdded:Wait())
+
+--========================================================
+-- NOTIFICAÇÕES
+--========================================================
+
+local function Notify(msg)
+    pcall(function()
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "PERSONAL ADMIN V7",
+            Text = msg,
+            Duration = 3
+        })
+    end)
+end
+
+--========================================================
+-- GUI
+--========================================================
+
+local GUI = Instance.new("ScreenGui")
+GUI.Name = "PersonalAdminV7"
+GUI.ResetOnSpawn = false
+
+pcall(function()
+    GUI.Parent = game:GetService("CoreGui")
+end)
+
+if not GUI.Parent then
+    GUI.Parent = Player:WaitForChild("PlayerGui")
+end
+
+local function Corner(obj, radius)
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, radius or 9)
+    c.Parent = obj
+end
+
+local function MakeButton(parent, text, position, size)
+    local b = Instance.new("TextButton")
+    b.Position = position
+    b.Size = size
+    b.BackgroundColor3 = Color3.fromRGB(38,38,38)
+    b.Text = text
+    b.TextColor3 = Color3.new(1,1,1)
+    b.Font = Enum.Font.GothamBold
+    b.TextSize = 12
+    b.Parent = parent
+    Corner(b)
+    return b
+end
+
+--========================================================
+-- ARRASTAR
+--========================================================
+
+local function MakeDraggable(frame, handle)
+    local dragging = false
+    local dragInput
+    local dragStart
+    local startPosition
+
+    handle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPosition = frame.Position
+            dragInput = input
+        end
+    end)
+
+    UIS.InputChanged:Connect(function(input)
+        if dragging and (
+            input.UserInputType == Enum.UserInputType.MouseMovement
+            or input == dragInput
+        ) then
+            local delta = input.Position - dragStart
+
+            frame.Position = UDim2.new(
+                startPosition.X.Scale,
+                startPosition.X.Offset + delta.X,
+                startPosition.Y.Scale,
+                startPosition.Y.Offset + delta.Y
+            )
+        end
+    end)
+
+    UIS.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
+            dragInput = nil
+        end
+    end)
+end
+
+--========================================================
+-- PAINEL PRINCIPAL
+--========================================================
+
+local Main = Instance.new("Frame")
+Main.Size = UDim2.fromOffset(330,280)
+Main.Position = UDim2.new(0.5,-165,0.5,-140)
+Main.BackgroundColor3 = Color3.fromRGB(18,18,18)
+Main.BorderSizePixel = 0
+Main.Parent = GUI
+Corner(Main,12)
+
+local Header = Instance.new("TextLabel")
+Header.Size = UDim2.new(1,0,0,42)
+Header.BackgroundColor3 = Color3.fromRGB(28,28,28)
+Header.Text = "PERSONAL ADMIN V7"
+Header.TextColor3 = Color3.new(1,1,1)
+Header.Font = Enum.Font.GothamBold
+Header.TextSize = 15
+Header.Parent = Main
+
+MakeDraggable(Main,Header)
+
+local Avatar = Instance.new("ImageLabel")
+Avatar.Size = UDim2.fromOffset(48,48)
+Avatar.Position = UDim2.fromOffset(12,55)
+Avatar.BackgroundTransparency = 1
+Avatar.Parent = Main
+
+local ok, thumbnail = pcall(function()
+    return Players:GetUserThumbnailAsync(
+        Player.UserId,
+        Enum.ThumbnailType.HeadShot,
+        Enum.ThumbnailSize.Size100x100
+    )
+end)
+
+if ok then
+    Avatar.Image = thumbnail
+end
+
+local UserLabel = Instance.new("TextLabel")
+UserLabel.Position = UDim2.fromOffset(70,55)
+UserLabel.Size = UDim2.new(1,-80,0,48)
+UserLabel.BackgroundTransparency = 1
+UserLabel.Text = Player.DisplayName .. "\n@" .. Player.Name
+UserLabel.TextColor3 = Color3.new(1,1,1)
+UserLabel.TextXAlignment = Enum.TextXAlignment.Left
+UserLabel.Font = Enum.Font.Gotham
+UserLabel.TextSize = 13
+UserLabel.Parent = Main
+
+local Credits = Instance.new("TextLabel")
+Credits.Position = UDim2.new(0,10,1,-28)
+Credits.Size = UDim2.new(1,-20,0,20)
+Credits.BackgroundTransparency = 1
+Credits.Text = "Personal Admin | V7"
+Credits.TextColor3 = Color3.fromRGB(150,150,150)
+Credits.Font = Enum.Font.Gotham
+Credits.TextSize = 11
+Credits.Parent = Main
+
+local Bubble = MakeButton(
+    GUI,"PA",
+    UDim2.new(0,15,0.5,0),
+    UDim2.fromOffset(48,48)
+)
+
+Bubble.Visible = false
+Corner(Bubble,24)
+MakeDraggable(Bubble,Bubble)
+
+MakeButton(
+    Main,"MINIMIZAR",
+    UDim2.fromOffset(10,115),
+    UDim2.fromOffset(305,32)
+).MouseButton1Click:Connect(function()
+    Main.Visible = false
+    Bubble.Visible = true
+end)
+
+Bubble.MouseButton1Click:Connect(function()
+    Main.Visible = true
+    Bubble.Visible = false
+end)
+
+--========================================================
+-- PAINEL DE COMANDOS
+--========================================================
+
+local CmdPanel = Instance.new("Frame")
+CmdPanel.Size = UDim2.fromOffset(310,390)
+CmdPanel.Position = UDim2.new(0.5,-155,0.5,-195)
+CmdPanel.BackgroundColor3 = Color3.fromRGB(18,18,18)
+CmdPanel.BorderSizePixel = 0
+CmdPanel.Visible = false
+CmdPanel.Parent = GUI
+Corner(CmdPanel,12)
+
+local CmdHeader = Instance.new("TextLabel")
+CmdHeader.Size = UDim2.new(1,0,0,42)
+CmdHeader.BackgroundColor3 = Color3.fromRGB(30,30,30)
+CmdHeader.Text = "PERSONAL ADMIN | COMMANDS"
+CmdHeader.TextColor3 = Color3.new(1,1,1)
+CmdHeader.Font = Enum.Font.GothamBold
+CmdHeader.TextSize = 13
+CmdHeader.Parent = CmdPanel
+
+MakeDraggable(CmdPanel,CmdHeader)
+
+local MinCmd = MakeButton(
+    CmdPanel,"—",
+    UDim2.new(1,-75,0,6),
+    UDim2.fromOffset(32,30)
+)
+
+local CloseCmd = MakeButton(
+    CmdPanel,"X",
+    UDim2.new(1,-38,0,6),
+    UDim2.fromOffset(32,30)
+)
+
+CloseCmd.BackgroundColor3 = Color3.fromRGB(150,35,35)
+
+local CmdScroll = Instance.new("ScrollingFrame")
+CmdScroll.Position = UDim2.fromOffset(10,52)
+CmdScroll.Size = UDim2.new(1,-20,1,-62)
+CmdScroll.BackgroundTransparency = 1
+CmdScroll.BorderSizePixel = 0
+CmdScroll.ScrollBarThickness = 4
+CmdScroll.Parent = CmdPanel
+
+local CmdList = Instance.new("UIListLayout")
+CmdList.Padding = UDim.new(0,5)
+CmdList.Parent = CmdScroll
+
+local CommandNames = {
+    ":fly - Ativar voo",
+    ":fly 100 - Voo com velocidade 100",
+    ":unfly - Desativar voo",
+    ":speed 50 - Velocidade",
+    ":jump 100 - Pulo",
+    ":to nome - Teleportar até jogador",
+    ":spin - Giro aleatório",
+    ":spin 100 - Definir giro",
+    ":unspin - Parar giro",
+    ":noclip - Atravessar objetos",
+    ":clip - Restaurar colisão",
+    ":invisible - Invisibilidade local",
+    ":visible - Restaurar aparência",
+    ":ghost - 90% transparente",
+    ":unghost - Restaurar aparência",
+    ":fire - Ativar fogo",
+    ":unfire - Remover fogo",
+    ":sparkles - Ativar partículas",
+    ":unsparkles - Remover partículas",
+    ":sit - Sentar",
+    ":dance - Dançar",
+    ":freeze - Congelar",
+    ":unfreeze - Descongelar",
+    ":reset - Reiniciar",
+    ":respawn - Renascimento",
+    ":refresh - Reiniciar",
+    ":re - Reiniciar e voltar ao lugar",
+    ":rejoin - Entrar novamente",
+    ":serverhop - Trocar de servidor",
+    ":Dex - Abrir Dex Explorer",
+    ":cmds - Abrir comandos"
+}
+
+for _,name in ipairs(CommandNames) do
+    local item = Instance.new("TextLabel")
+    item.Size = UDim2.new(1,-5,0,27)
+    item.BackgroundColor3 = Color3.fromRGB(35,35,35)
+    item.Text = "  "..name
+    item.TextColor3 = Color3.fromRGB(230,230,230)
+    item.TextXAlignment = Enum.TextXAlignment.Left
+    item.Font = Enum.Font.Gotham
+    item.TextSize = 11
+    item.Parent = CmdScroll
+    Corner(item,5)
+end
+
+CmdList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    CmdScroll.CanvasSize = UDim2.new(
+        0,0,0,CmdList.AbsoluteContentSize.Y+10
+    )
+end)
+
+local CmdBubble = MakeButton(
+    GUI,"CMD",
+    UDim2.new(0,15,0.65,0),
+    UDim2.fromOffset(48,48)
+)
+
+CmdBubble.Visible = false
+Corner(CmdBubble,24)
+MakeDraggable(CmdBubble,CmdBubble)
+
+local function ShowCommands()
+    CmdPanel.Visible = true
+    CmdBubble.Visible = false
+end
+
+local function HideCommands()
+    CmdPanel.Visible = false
+    CmdBubble.Visible = true
+end
+
+MinCmd.MouseButton1Click:Connect(HideCommands)
+CloseCmd.MouseButton1Click:Connect(HideCommands)
+CmdBubble.MouseButton1Click:Connect(ShowCommands)
+
+MakeButton(
+    Main,"COMANDOS",
+    UDim2.fromOffset(10,155),
+    UDim2.fromOffset(305,32)
+).MouseButton1Click:Connect(ShowCommands)
+
+--========================================================
+-- BOTÃO DE VOO
+--========================================================
+
+local FlyButton = MakeButton(
+    GUI,"FLY: OFF",
+    UDim2.new(1,-125,0.55,0),
+    UDim2.fromOffset(105,42)
+)
+
+FlyButton.Visible = false
+MakeDraggable(FlyButton,FlyButton)--========================================================
+-- RESTAURAR ANIMAÇÃO
+--========================================================
+
+local function RestoreFlightAnimation()
+    if AnimateScript and AnimateScript.Parent then
+        if AnimateWasDisabled ~= nil then
+            AnimateScript.Disabled = AnimateWasDisabled
+        else
+            AnimateScript.Disabled = false
+        end
+    end
+
+    if Humanoid then
+        if OldAutoRotate ~= nil then
+            Humanoid.AutoRotate = OldAutoRotate
+        else
+            Humanoid.AutoRotate = true
+        end
+
+        task.defer(function()
+            if Humanoid and Humanoid.Parent then
+                Humanoid:ChangeState(
+                    Enum.HumanoidStateType.Running
+                )
+            end
+        end)
+    end
+end
+
+--========================================================
+-- PARAR VOO
+--========================================================
+
+local function StopFly()
+    FlyOn = false
+
+    if FlyConnection then
+        FlyConnection:Disconnect()
+        FlyConnection = nil
+    end
+
+    if Velocity then Velocity:Destroy() end
+    if Orientation then Orientation:Destroy() end
+    if Attachment then Attachment:Destroy() end
+
+    Velocity = nil
+    Orientation = nil
+    Attachment = nil
+
+    RestoreFlightAnimation()
+
+    FlyButton.Text = "FLY: OFF"
+    FlyButton.BackgroundColor3 = Color3.fromRGB(35,35,35)
+end
+
+--========================================================
+-- ATIVAR VOO
+--========================================================
+
+local function StartFly()
+    if FlyOn or not Root or not Humanoid then return end
+
+    FlyOn = true
+
+    AnimateScript = Character:FindFirstChild("Animate")
+
+    if AnimateScript then
+        AnimateWasDisabled = AnimateScript.Disabled
+        AnimateScript.Disabled = true
+    end
+
+    OldAutoRotate = Humanoid.AutoRotate
+    Humanoid.AutoRotate = false
+
+    for _,track in ipairs(Humanoid:GetPlayingAnimationTracks()) do
+        track:Stop(0.15)
+    end
+
+    Attachment = Instance.new("Attachment")
+    Attachment.Parent = Root
+
+    Velocity = Instance.new("LinearVelocity")
+    Velocity.Attachment0 = Attachment
+    Velocity.RelativeTo = Enum.ActuatorRelativeTo.World
+    Velocity.MaxForce = math.huge
+    Velocity.VectorVelocity = Vector3.zero
+    Velocity.Parent = Root
+
+    Orientation = Instance.new("AlignOrientation")
+    Orientation.Attachment0 = Attachment
+    Orientation.Mode = Enum.OrientationAlignmentMode.OneAttachment
+    Orientation.Responsiveness = 8
+    Orientation.MaxTorque = math.huge
+    Orientation.Parent = Root
+
+    FlyConnection = RunService.Heartbeat:Connect(function()
+        if not FlyOn or not Root or not Humanoid then
+            StopFly()
+            return
+        end
+
+        local camera = workspace.CurrentCamera
+        if not camera then return end
+
+        local move = Humanoid.MoveDirection
+        local look = camera.CFrame.LookVector
+        local right = camera.CFrame.RightVector
+
+        local flatLook = Vector3.new(look.X,0,look.Z)
+        local flatRight = Vector3.new(right.X,0,right.Z)
+
+        if flatLook.Magnitude > 0 then
+            flatLook = flatLook.Unit
+        end
+
+        if flatRight.Magnitude > 0 then
+            flatRight = flatRight.Unit
+        end
+
+        local forwardAmount = move:Dot(flatLook)
+        local rightAmount = move:Dot(flatRight)
+
+        local direction =
+            look * forwardAmount +
+            right * rightAmount
+
+        if direction.Magnitude > 1 then
+            direction = direction.Unit
+        end
+
+        -- Valor 1 mantém a velocidade rápida padrão do voo.
+        local effectiveFlySpeed = (FlySpeed == 1) and 80 or FlySpeed
+        Velocity.VectorVelocity = direction * effectiveFlySpeed
+
+        Orientation.CFrame = CFrame.lookAt(
+            Vector3.zero,
+            look
+        )
+    end)
+
+    FlyButton.Text = "FLY: ON"
+    FlyButton.BackgroundColor3 = Color3.fromRGB(25,120,65)
+end
+
+FlyButton.MouseButton1Click:Connect(function()
+    if FlyOn then
+        StopFly()
+    else
+        StartFly()
+    end
+end)
+
+--========================================================
+-- VELOCIDADE E PULO
+--========================================================
+
+local function SetSpeed(value)
+    value = tonumber(value)
+
+    if value and Humanoid then
+        Humanoid.WalkSpeed = math.clamp(value,0,500)
+        Notify("Velocidade: "..Humanoid.WalkSpeed)
+    else
+        Notify("Use :speed 50")
+    end
+end
+
+local function SetJump(value)
+    value = tonumber(value)
+
+    if value and Humanoid then
+        Humanoid.UseJumpPower = true
+        Humanoid.JumpPower = math.clamp(value,0,500)
+        Notify("Pulo: "..Humanoid.JumpPower)
+    else
+        Notify("Use :jump 100")
+    end
+end
+
+--========================================================
+-- VELOCIDADE DO VOO
+--========================================================
+
+local function SetFlySpeed(value)
+    value = tonumber(value)
+
+    if value then
+        FlySpeed = math.clamp(value,1,500)
+        Notify("Velocidade do voo: "..FlySpeed)
+    else
+        Notify("Use :fly 100")
+    end
+end
+
+--========================================================
+-- TELEPORTE ATÉ JOGADOR
+--========================================================
+
+local function TeleportToPlayer(query)
+    if not query or query == "" then
+        Notify("Use :to nome")
+        return
+    end
+
+    query = query:gsub("^@", ""):lower()
+
+    local matches = {}
+
+    for _,target in ipairs(Players:GetPlayers()) do
+        if target ~= Player then
+            local username = target.Name:lower()
+            local display = target.DisplayName:lower()
+
+            if username == query or display == query then
+                matches = {target}
+                break
+            end
+        end
+    end
+
+    if #matches == 0 then
+        for _,target in ipairs(Players:GetPlayers()) do
+            if target ~= Player then
+                local username = target.Name:lower()
+                local display = target.DisplayName:lower()
+
+                if username:sub(1,#query) == query
+                or display:sub(1,#query) == query then
+                    table.insert(matches,target)
+                end
+            end
+        end
+    end
+
+    if #matches == 0 then
+        for _,target in ipairs(Players:GetPlayers()) do
+            if target ~= Player then
+                local username = target.Name:lower()
+                local display = target.DisplayName:lower()
+
+                if username:find(query,1,true)
+                or display:find(query,1,true) then
+                    table.insert(matches,target)
+                end
+            end
+        end
+    end
+
+    if #matches == 0 then
+        Notify("Jogador não encontrado")
+        return
+    end
+
+    if #matches > 1 then
+        Notify("Nome ambíguo! Digite mais letras.")
+        return
+    end
+
+    local target = matches[1]
+    local targetChar = target.Character
+
+    local targetRoot = targetChar
+        and targetChar:FindFirstChild("HumanoidRootPart")
+
+    if not targetRoot or not Root or not Character then
+        Notify("Personagem indisponível")
+        return
+    end
+
+    Character:PivotTo(
+        targetRoot.CFrame * CFrame.new(0,0,3)
+    )
+
+    Notify("Teleportado até "..target.DisplayName)
+end
+
+--========================================================
+-- SPIN
+--========================================================
+
+local function StartSpin(value)
+    SpinSpeed = tonumber(value) or math.random(10,100)
+    SpinOn = true
+    Notify("Giro ativado")
+end
+
+local function StopSpin()
+    SpinOn = false
+
+    if Root then
+        Root.AssemblyAngularVelocity = Vector3.zero
+    end
+
+    Notify("Giro desativado")
+end
+
+--========================================================
+-- NOCLIP
+--========================================================
+
+local function StartNoclip()
+    if not Character then return end
+
+    NoclipOn = true
+    SavedCollision = {}
+
+    for _,part in ipairs(Character:GetDescendants()) do
+        if part:IsA("BasePart") then
+            SavedCollision[part] = part.CanCollide
+        end
+    end
+
+    Notify("Noclip ativado")
+end
+
+local function StopNoclip()
+    NoclipOn = false
+
+    for part,oldValue in pairs(SavedCollision) do
+        if part and part.Parent then
+            part.CanCollide = oldValue
+        end
+    end
+
+    SavedCollision = {}
+    Notify("Noclip desativado")
+end
+
+--========================================================
+-- INVISIBLE
+--========================================================
+
+local function SetInvisible(state)
+    if not Character then return end
+
+    Invisible = state
+
+    if state then
+        OriginalTransparency = {}
+
+        for _,obj in ipairs(Character:GetDescendants()) do
+            if obj:IsA("BasePart") then
+                OriginalTransparency[obj] = {
+                    Transparency = obj.Transparency,
+                    LocalTransparencyModifier =
+                        obj.LocalTransparencyModifier
+                }
+
+                obj.LocalTransparencyModifier = 1
+
+            elseif obj:IsA("Decal") or obj:IsA("Texture") then
+                OriginalTransparency[obj] = {
+                    Transparency = obj.Transparency
+                }
+
+                obj.Transparency = 1
+            end
+        end
+
+        Notify("Invisibilidade local ativada")
+    else
+        for obj,old in pairs(OriginalTransparency) do
+            if obj and obj.Parent then
+                if obj:IsA("BasePart") then
+                    obj.Transparency = old.Transparency
+                    obj.LocalTransparencyModifier =
+                        old.LocalTransparencyModifier
+
+                elseif obj:IsA("Decal") or obj:IsA("Texture") then
+                    obj.Transparency = old.Transparency
+                end
+            end
+        end
+
+        OriginalTransparency = {}
+        Notify("Aparência restaurada")
+    end
+end
+
+--========================================================
+-- GHOST 90%
+--========================================================
+
+local function SetGhost(state)
+    if not Character then return end
+
+    GhostOn = state
+
+    if state then
+        GhostOriginal = {}
+
+        for _,obj in ipairs(Character:GetDescendants()) do
+            if obj:IsA("BasePart") then
+                GhostOriginal[obj] = {
+                    Transparency = obj.Transparency,
+                    LocalTransparencyModifier =
+                        obj.LocalTransparencyModifier
+                }
+
+                obj.Transparency = 0.9
+                obj.LocalTransparencyModifier = 0
+
+            elseif obj:IsA("Decal") or obj:IsA("Texture") then
+                GhostOriginal[obj] = {
+                    Transparency = obj.Transparency
+                }
+
+                obj.Transparency = 0.9
+            end
+        end
+
+        Notify("Ghost ativado: 90% transparente")
+    else
+        for obj,old in pairs(GhostOriginal) do
+            if obj and obj.Parent then
+                if obj:IsA("BasePart") then
+                    obj.Transparency = old.Transparency
+                    obj.LocalTransparencyModifier =
+                        old.LocalTransparencyModifier
+
+                elseif obj:IsA("Decal") or obj:IsA("Texture") then
+                    obj.Transparency = old.Transparency
+                end
+            end
+        end
+
+        GhostOriginal = {}
+        Notify("Ghost desativado")
+    end
+end--========================================================
+-- FOGO
+--========================================================
+
+local function FireEffect()
+    if not Root then return end
+    if Root:FindFirstChild("PA_Fire") then return end
+
+    local fire = Instance.new("Fire")
+    fire.Name = "PA_Fire"
+    fire.Parent = Root
+
+    Notify("Fogo ativado")
+end
+
+local function RemoveFire()
+    local fire = Root and Root:FindFirstChild("PA_Fire")
+
+    if fire then
+        fire:Destroy()
+    end
+
+    Notify("Fogo removido")
+end
+
+--========================================================
+-- SPARKLES
+--========================================================
+
+local function SparkleEffect()
+    if not Root then return end
+    if Root:FindFirstChild("PA_Sparkles") then return end
+
+    local sparkle = Instance.new("Sparkles")
+    sparkle.Name = "PA_Sparkles"
+    sparkle.Parent = Root
+
+    Notify("Partículas ativadas")
+end
+
+local function RemoveSparkles()
+    local sparkle = Root and Root:FindFirstChild("PA_Sparkles")
+
+    if sparkle then
+        sparkle:Destroy()
+    end
+
+    Notify("Partículas removidas")
+end
+
+--========================================================
+-- LOOPS
+--========================================================
+
+RunService.Stepped:Connect(function()
+    if NoclipOn and Character then
+        for _,part in ipairs(Character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
+    end
+end)
+
+RunService.Heartbeat:Connect(function()
+    if SpinOn and Root then
+        Root.AssemblyAngularVelocity =
+            Vector3.new(0,SpinSpeed,0)
+    end
+end)
+
+--========================================================
+-- REINICIAR E VOLTAR À POSIÇÃO ANTERIOR
+--========================================================
+
+local function ResetCharacter()
+    if not Humanoid or not Root then return end
+
+    if ResetPending then
+        Notify("Reinicialização já está em andamento")
+        return
+    end
+
+    PendingReturnCFrame = Root.CFrame
+    ResetPending = true
+
+    StopFly()
+    SetInvisible(false)
+    SetGhost(false)
+
+    Notify("Reiniciando e guardando posição...")
+
+    Humanoid.Health = 0
+end
+
+--========================================================
+-- SERVERHOP
+--========================================================
+
+local function ServerHop()
+    Notify("Procurando outro servidor...")
+
+    task.spawn(function()
+        local cursor = ""
+        local candidates = {}
+
+        for page = 1,5 do
+            local url =
+                "https://games.roblox.com/v1/games/"
+                ..game.PlaceId
+                .."/servers/Public?sortOrder=Asc&limit=100"
+
+            if cursor ~= "" then
+                url = url .. "&cursor=" .. HttpService:UrlEncode(cursor)
+            end
+
+            local success, response = pcall(function()
+                return game:HttpGet(url)
+            end)
+
+            if not success then
+                Notify("Não consegui consultar os servidores")
+                warn(response)
+                return
+            end
+
+            local decodedSuccess, data = pcall(function()
+                return HttpService:JSONDecode(response)
+            end)
+
+            if not decodedSuccess or type(data) ~= "table" then
+                Notify("Erro ao ler a lista de servidores")
+                return
+            end
+
+            if type(data.data) == "table" then
+                for _,server in ipairs(data.data) do
+                    if server.id
+                    and server.id ~= game.JobId
+                    and server.playing
+                    and server.maxPlayers
+                    and server.playing < server.maxPlayers then
+
+                        table.insert(candidates,server.id)
+                    end
+                end
+            end
+
+            cursor = data.nextPageCursor or ""
+
+            if cursor == "" or #candidates > 0 then
+                break
+            end
+        end
+
+        if #candidates == 0 then
+            Notify("Nenhum servidor disponível encontrado")
+            return
+        end
+
+        local serverId = candidates[math.random(1,#candidates)]
+
+        Notify("Entrando em outro servidor...")
+
+        local success, err = pcall(function()
+            TeleportService:TeleportToPlaceInstance(
+                game.PlaceId,
+                serverId,
+                Player
+            )
+        end)
+
+        if not success then
+            Notify("Falha ao trocar de servidor")
+            warn(err)
+        end
+    end)
+end
+
+--========================================================
+-- DEX EXPLORER
+--========================================================
+
+local function OpenDex()
+    Notify("Carregando Dex...")
+
+    task.spawn(function()
+        local success, err = pcall(function()
+            loadstring(game:HttpGet(
+                "https://scriptblox.com/raw/Universal-Script-DEX-REContinued-240081"
+            ))()
+        end)
+
+        if not success then
+            Notify("Erro ao carregar Dex")
+            warn(err)
+        end
+    end)
+end
+
+--========================================================
+-- EXECUTAR COMANDOS
+--========================================================
+
+local function ExecuteCommand(message)
+    if message:sub(1,#Prefix) ~= Prefix then
+        return
+    end
+
+    local args = {}
+
+    for word in message:sub(#Prefix+1):gmatch("%S+") do
+        table.insert(args,word:lower())
+    end
+
+    local cmd = table.remove(args,1)
+
+    if args[1] == "me" then
+        table.remove(args,1)
+    end
+
+    if cmd == "fly" then
+        if args[1] then
+            SetFlySpeed(args[1])
+        end
+
+        FlyButton.Visible = true
+        StartFly()
+
+    elseif cmd == "unfly" then
+        StopFly()
+        FlyButton.Visible = false
+
+    elseif cmd == "speed" then
+        SetSpeed(args[1])
+
+    elseif cmd == "jump" then
+        SetJump(args[1])
+
+    elseif cmd == "to" then
+        TeleportToPlayer(table.concat(args," "))
+
+    elseif cmd == "spin" then
+        StartSpin(args[1])
+
+    elseif cmd == "unspin" then
+        StopSpin()
+
+    elseif cmd == "noclip" then
+        StartNoclip()
+
+    elseif cmd == "clip" then
+        StopNoclip()
+
+    elseif cmd == "invisible" then
+        SetInvisible(true)
+
+    elseif cmd == "visible" then
+        SetInvisible(false)
+
+    elseif cmd == "ghost" then
+        SetGhost(true)
+
+    elseif cmd == "unghost" then
+        SetGhost(false)
+
+    elseif cmd == "fire" then
+        FireEffect()
+
+    elseif cmd == "unfire" then
+        RemoveFire()
+
+    elseif cmd == "sparkles" then
+        SparkleEffect()
+
+    elseif cmd == "unsparkles" then
+        RemoveSparkles()
+
+    elseif cmd == "sit" then
+        if Humanoid then
+            Humanoid.Sit = true
+        end
+
+    elseif cmd == "dance" then
+        Notify("Animação depende do jogo")
+
+    elseif cmd == "freeze" then
+        if Root then
+            Root.Anchored = true
+            Notify("Personagem congelado")
+        end
+
+    elseif cmd == "unfreeze" then
+        if Root then
+            Root.Anchored = false
+            Notify("Personagem descongelado")
+        end
+
+    elseif cmd == "reset"
+    or cmd == "respawn"
+    or cmd == "refresh"
+    or cmd == "re" then
+
+        ResetCharacter()
+
+    elseif cmd == "rejoin" then
+        local success,err = pcall(function()
+            TeleportService:Teleport(game.PlaceId,Player)
+        end)
+
+        if not success then
+            Notify("Não foi possível entrar novamente")
+            warn(err)
+        end
+
+    elseif cmd == "serverhop" then
+        ServerHop()
+
+    elseif cmd == "dex" then
+        OpenDex()
+
+    elseif cmd == "cmds" then
+        ShowCommands()
+
+    else
+        Notify("Comando desconhecido: "..tostring(cmd))
+    end
+end
+
+--========================================================
+-- CHAT
+--========================================================
+
+Player.Chatted:Connect(ExecuteCommand)
+
+--========================================================
+-- PERSONAGEM RENASCIDO
+--========================================================
+
+Player.CharacterAdded:Connect(function(char)
+    StopFly()
+
+    SpinOn = false
+    NoclipOn = false
+    Invisible = false
+    GhostOn = false
+
+    SavedCollision = {}
+    OriginalTransparency = {}
+    GhostOriginal = {}
+
+    CharacterSetup(char)
+
+    task.spawn(function()
+        local newRoot = char:WaitForChild("HumanoidRootPart",10)
+
+        if newRoot and ResetPending and PendingReturnCFrame then
+            task.wait(0.3)
+
+            if char.Parent then
+                char:PivotTo(PendingReturnCFrame)
+                Notify("Personagem voltou à posição anterior!")
+            end
+
+            PendingReturnCFrame = nil
+            ResetPending = false
+        end
+    end)
+
+    task.wait(0.3)
+
+    AnimateScript = char:FindFirstChild("Animate")
+
+    if AnimateScript then
+        AnimateScript.Disabled = false
+    end
+
+    FlyButton.Text = "FLY: OFF"
+    FlyButton.Visible = false
+end)
+
+--========================================================
+-- INICIALIZAÇÃO
+--========================================================
+
+Notify("PERSONAL ADMIN V7 carregado!")
