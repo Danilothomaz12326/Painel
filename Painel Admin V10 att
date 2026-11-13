@@ -412,7 +412,7 @@ local CommandNames = {
     ":uint - Instant Interaction OFF",
     "!profile nome - Ver perfil de jogador",
     ":cmds - Abrir comandos",
-    ":cmdbox - Abrir caixa para digitar comandos"
+    ":cmdbox - Abrir caixa de comandos"
 }
 
 for _,name in ipairs(CommandNames) do
@@ -561,7 +561,8 @@ ProfileUsername.BackgroundTransparency = 1
 ProfileUsername.Text = "@Username"
 ProfileUsername.TextColor3 = Color3.fromRGB(175,175,175)
 ProfileUsername.TextXAlignment = Enum.TextXAlignment.Left
-ProfileUsername.Font = Enum.Font.GothamProfileUsername.TextSize = 11
+ProfileUsername.Font = Enum.Font.Gotham
+ProfileUsername.TextSize = 11
 ProfileUsername.TextTruncate = Enum.TextTruncate.AtEnd
 ProfileUsername.Parent = ProfilePanel
 
@@ -597,10 +598,10 @@ local ProfileAccountAge = ProfileRow("Dias da conta",119)
 local ProfileCreated = ProfileRow("Criada em",140)
 local ProfileRegion = ProfileRow("Região aleatória",161)
 local ProfileCity = ProfileRow("Cidade aleatória",182)
-local ProfileLocation = ProfileRow("Localização aleatória",203)
+local ProfileLocation = ProfileRow("Local aleatório",203)
 local ProfilePhone = ProfileRow("Telefone (demo)",224)
 local ProfileCPF = ProfileRow("CPF (demo)",245)
-local ProfileFullName = ProfileRow("Nome gerado",266)
+local ProfileFullName = ProfileRow("Nome aleatório",266)
 local ProfileOrigin = ProfileRow("Origem",287)
 local ProfileStatus = ProfileRow("Status",308)
 
@@ -649,12 +650,12 @@ local function ShowProfile(target)
     ProfileUserId.Text = tostring(target.UserId)
     ProfileAccountAge.Text = tostring(target.AccountAge) .. " dias"
     ProfileCreated.Text = "Carregando..."
-    ProfileRegion.Text = generatedPlace.region
-    ProfileCity.Text = generatedPlace.city
+    ProfileRegion.Text = generatedPlace.region .. " (aleatória)"
+    ProfileCity.Text = generatedPlace.city .. " (aleatória)"
     ProfileLocation.Text = generatedPlace.city .. ", " .. generatedPlace.state
-    ProfilePhone.Text = "(00) 00000-0000"
-    ProfileCPF.Text = "000.000.000-00"
-    ProfileFullName.Text = generatedName
+    ProfilePhone.Text = "Não informado"
+    ProfileCPF.Text = "Não informado"
+    ProfileFullName.Text = generatedName .. " (aleatório)"
     ProfileOrigin.Text = "Não verificada"
     ProfileStatus.Text = "No servidor"
 
@@ -780,6 +781,7 @@ end
 --========================================================
 
 local ExecuteCommand
+
 local CmdBoxPanel = Instance.new("Frame")
 CmdBoxPanel.Name = "CmdBoxPanel"
 CmdBoxPanel.Size = UDim2.fromOffset(300,150)
@@ -819,7 +821,7 @@ CmdBoxInput.Size = UDim2.new(1,-20,0,38)
 CmdBoxInput.BackgroundColor3 = Color3.fromRGB(35,35,35)
 CmdBoxInput.TextColor3 = Color3.new(1,1,1)
 CmdBoxInput.PlaceholderColor3 = Color3.fromRGB(155,155,155)
-CmdBoxInput.PlaceholderText = ":speed me 50"
+CmdBoxInput.PlaceholderText = ":speed me 50 ou !profile jogador"
 CmdBoxInput.Text = ""
 CmdBoxInput.ClearTextOnFocus = false
 CmdBoxInput.Font = Enum.Font.Gotham
@@ -1108,7 +1110,8 @@ local function TeleportToPlayer(query)
             local username = target.Name:lower()
             local display = target.DisplayName:lower()
 
-            if username == query or display == query then                matches = {target}
+            if username == query or display == query then
+                matches = {target}
                 break
             end
         end
